@@ -82,5 +82,81 @@ def users():
 
     return response
 
+@app.route('reviews/<int:id>', methods=['GET','PATCH', 'DELETE'])
+def review_by_id(id):
+    review = Review.query.filter(Review.id == id).first()
+
+    if review == None:
+        response_body = {
+            "message": "This record does not exist in our database. Please try again."
+        }
+        response = make_response(response_body, 404)
+
+        return response
+    
+    else:
+        if request.method == 'GET':
+            review_dict = review.to_dict()
+            response = make_response(
+                review_dict,
+                200
+            )
+
+            return response
+        
+        elif request.method == 'PATCH':
+            for attr in request.form:
+                setattr(review, attr, request.form.get(attr))
+
+            db.session.add(review)
+            db.session.commit()
+
+            review_dict = review.to_dict()
+
+            response = make_response(
+                review_dict,
+                200
+            )
+        
+        elif request.method == 'DELETE':
+            db.session.delete(review)
+            db.session.commit()
+
+            response_body = {
+                "delete_successful": True,
+                "message": "Review deleted."
+            }
+
+            response = make_response(
+                response_body,
+                200
+            )
+
+            return response
+        
+@app.route('/reviews', methods=['GET', 'POST'])
+def reviews():
+    if request.method == 'GET':
+        reviews = []
+        for review in Review.query.all():
+            review_dict = review.to_dict()
+            reviews.append(review_dict)
+
+        response = make_response(
+            reviews,
+            200
+        )
+
+        return response
+    
+    elif request.method == 'POST':
+        response_body = {}
+        response = make_response(
+            response_body,
+            201
+        )
+    
+        return response
+
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
